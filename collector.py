@@ -101,32 +101,67 @@ INTROS = {
 DEFAULT_INTRO = "Thank you for the great feedback about your experience with {co}. It means a lot to our team."
 
 
+HEADINGS = {
+    "maintenance": "Glad we could help!",
+    "move-in": "Welcome home!",
+    "move-out": "Thank you for staying with us",
+    "showing": "Thanks for visiting",
+}
+DEFAULT_HEADING = "Thank you for your feedback"
+NAVY, GOLD, BG = "#16324f", "#f5b301", "#f3f5f8"
+
+
 def _button(url, label, color):
-    return (f'<p style="margin:12px 0"><a href="{url}" style="background:{color};color:#fff;padding:12px 22px;'
-            f'border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">{label}</a></p>')
+    return (f'<tr><td align="center" style="padding:6px 0">'
+            f'<a href="{url}" style="background:{color};color:#ffffff;font-family:Arial,Helvetica,sans-serif;'
+            f'font-size:16px;font-weight:bold;text-decoration:none;padding:14px 0;border-radius:8px;'
+            f'display:block;width:100%;max-width:320px;text-align:center">{label}</a></td></tr>')
+
+
+def _html(hi, heading, intro, review_url, yelp_url, company):
+    buttons = _button(review_url, "&#9733; Leave a Google review", "#1a73e8")
+    if yelp_url:
+        buttons += _button(yelp_url, "&#9733; Leave a Yelp review", "#d32323")
+    f = "font-family:Arial,Helvetica,sans-serif;"
+    return (
+        f'<!doctype html><html><body style="margin:0;padding:0;background:{BG}">'
+        f'<div style="display:none;max-height:0;overflow:hidden;opacity:0">{intro}</div>'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{BG};padding:24px 12px"><tr><td align="center">'
+        f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden">'
+        f'<tr><td align="center" style="background:{NAVY};padding:26px 24px">'
+        f'<div style="{f}font-size:22px;font-weight:bold;letter-spacing:1px;color:#ffffff">{company.upper()}</div></td></tr>'
+        f'<tr><td align="center" style="padding:30px 32px 6px">'
+        f'<div style="font-size:26px;letter-spacing:4px;color:{GOLD}">&#9733;&#9733;&#9733;&#9733;&#9733;</div>'
+        f'<h1 style="{f}font-size:24px;line-height:1.3;color:{NAVY};margin:12px 0 0">{heading}</h1></td></tr>'
+        f'<tr><td style="padding:16px 32px 4px;{f}font-size:16px;line-height:1.6;color:#33414f">'
+        f'<p style="margin:0 0 14px">{hi}</p>'
+        f'<p style="margin:0 0 14px">Thank you for your wonderful feedback! {intro}</p>'
+        f'<p style="margin:0 0 6px">If you have a minute, a quick review helps future residents find us:</p></td></tr>'
+        f'<tr><td style="padding:10px 32px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{buttons}</table></td></tr>'
+        f'<tr><td style="padding:18px 32px 30px;{f}font-size:16px;line-height:1.6;color:#33414f">'
+        f'Thank you again,<br><strong>The {company} Team</strong></td></tr>'
+        f'<tr><td align="center" style="background:#f8f9fb;padding:16px 24px;{f}font-size:12px;color:#8a95a1">'
+        f'You received this because you recently shared feedback with {company}.</td></tr>'
+        f'</table></td></tr></table></body></html>')
 
 
 def build_message(to, name, sender, sender_name, review_url, company, yelp_url=None, survey_type=None):
-    intro = INTROS.get((survey_type or "").lower(), DEFAULT_INTRO).format(co=company)
+    stype = (survey_type or "").lower()
+    intro = INTROS.get(stype, DEFAULT_INTRO).format(co=company)
+    heading = HEADINGS.get(stype, DEFAULT_HEADING)
     first = (name or "").strip().split(" ")[0].title() if name else ""
     hi = f"Hi {first}," if first else "Hi,"
     text = (f"{hi}\n\nThank you for your wonderful feedback! {intro}\n\n"
-            f"If you have a minute, would you share it as a review? It helps future residents find us:\n"
+            f"If you have a minute, a quick review helps future residents find us:\n"
             f"Google: {review_url}\n"
             + (f"Yelp: {yelp_url}\n" if yelp_url else "")
             + f"\nThank you again,\nThe {company} Team\n")
-    html = (f"<p>{hi}</p><p>Thank you for your wonderful feedback! {intro}</p>"
-            "<p>If you have a minute, would you share it as a review? "
-            "It helps future residents find us:</p>"
-            + _button(review_url, "Leave a Google review", "#4285F4")
-            + (_button(yelp_url, "Leave a Yelp review", "#D32323") if yelp_url else "")
-            + f"<p>Thank you again,<br>The {company} Team</p>")
     msg = EmailMessage()
     msg["Subject"] = f"Thank you from {company}"
     msg["From"] = f"{sender_name} <{sender}>"
     msg["To"] = to
     msg.set_content(text)
-    msg.add_alternative(html, subtype="html")
+    msg.add_alternative(_html(hi, heading, intro, review_url, yelp_url, company), subtype="html")
     return msg
 
 

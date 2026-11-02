@@ -20,6 +20,7 @@ import requests
 
 TIMEOUT = 30
 MIN_STARS = 4
+YELP_DEFAULT = "https://www.yelp.com/writeareview/biz/bqEXFPGqPExbUGJ-iEYXMA"
 GOOGLE_DEFAULT = "https://search.google.com/local/writereview?placeid=ChIJcTynjYG8woARQfVrh25QzU4"
 # Which question holds the star rating for each AppFolio survey type (case-insensitive substring).
 RATING_QUESTIONS = {
@@ -108,7 +109,9 @@ HEADINGS = {
     "showing": "Thanks for visiting",
 }
 DEFAULT_HEADING = "Thank you for your feedback"
-NAVY, GOLD, BG = "#16324f", "#f5b301", "#f3f5f8"
+NAVY, GOLD, BG = "#764e8d", "#f5b301", "#f4f0f7"   # NAVY = Zuma purple
+DARK = "#4a2f5a"
+LOGO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logo.png")
 
 
 def _button(url, label, color):
@@ -119,7 +122,7 @@ def _button(url, label, color):
 
 
 def _html(hi, heading, intro, review_url, yelp_url, company):
-    buttons = _button(review_url, "&#9733; Leave a Google review", "#1a73e8")
+    buttons = _button(review_url, "&#9733; Leave a Google review", NAVY)
     if yelp_url:
         buttons += _button(yelp_url, "&#9733; Leave a Yelp review", "#d32323")
     f = "font-family:Arial,Helvetica,sans-serif;"
@@ -128,8 +131,9 @@ def _html(hi, heading, intro, review_url, yelp_url, company):
         f'<div style="display:none;max-height:0;overflow:hidden;opacity:0">{intro}</div>'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{BG};padding:24px 12px"><tr><td align="center">'
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden">'
-        f'<tr><td align="center" style="background:{NAVY};padding:26px 24px">'
-        f'<div style="{f}font-size:22px;font-weight:bold;letter-spacing:1px;color:#ffffff">{company.upper()}</div></td></tr>'
+        f'<tr><td align="center" style="background:{NAVY};padding:28px 24px 22px">'
+        f'<img src="cid:zumalogo" width="96" alt="{company}" style="display:block;border:0;height:auto">'
+        f'<div style="{f}font-size:15px;font-weight:bold;letter-spacing:3px;color:#ffffff;margin-top:12px">{company.upper()}</div></td></tr>'
         f'<tr><td align="center" style="padding:30px 32px 6px">'
         f'<div style="font-size:26px;letter-spacing:4px;color:{GOLD}">&#9733;&#9733;&#9733;&#9733;&#9733;</div>'
         f'<h1 style="{f}font-size:24px;line-height:1.3;color:{NAVY};margin:12px 0 0">{heading}</h1></td></tr>'
@@ -140,7 +144,7 @@ def _html(hi, heading, intro, review_url, yelp_url, company):
         f'<tr><td style="padding:10px 32px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{buttons}</table></td></tr>'
         f'<tr><td style="padding:18px 32px 30px;{f}font-size:16px;line-height:1.6;color:#33414f">'
         f'Thank you again,<br><strong>The {company} Team</strong></td></tr>'
-        f'<tr><td align="center" style="background:#f8f9fb;padding:16px 24px;{f}font-size:12px;color:#8a95a1">'
+        f'<tr><td align="center" style="background:{DARK};padding:16px 24px;{f}font-size:12px;color:#d9c9e3">'
         f'You received this because you recently shared feedback with {company}.</td></tr>'
         f'</table></td></tr></table></body></html>')
 
@@ -162,6 +166,11 @@ def build_message(to, name, sender, sender_name, review_url, company, yelp_url=N
     msg["To"] = to
     msg.set_content(text)
     msg.add_alternative(_html(hi, heading, intro, review_url, yelp_url, company), subtype="html")
+    try:
+        with open(LOGO_PATH, "rb") as fh:
+            msg.get_payload()[1].add_related(fh.read(), "image", "png", cid="<zumalogo>")
+    except OSError:
+        pass
     return msg
 
 
@@ -194,11 +203,11 @@ def select_candidates(rows, since, already_responses, recent_emails):
 def send_test(to):
     """Send one sample of each email variant to `to`. Touches no resident, no database, no log."""
     sender = env("SMTP_USER", required=True)
-    print("Yelp link:", "set" if env("YELP_REVIEW_URL") else "NOT SET (YELP_REVIEW_URL is empty, so the Yelp button is left out)")
+    print("Yelp link:", "from YELP_REVIEW_URL" if env("YELP_REVIEW_URL") else "built-in default")
     for stype in INTROS:
         msg = build_message(to, "Sarah Example", sender, env("SENDER_NAME", "Zuma Housing"),
                             env("GOOGLE_REVIEW_URL", GOOGLE_DEFAULT), env("COMPANY_NAME", "Zuma Housing"),
-                            env("YELP_REVIEW_URL") or None, stype)
+                            (env("YELP_REVIEW_URL") or YELP_DEFAULT), stype)
         msg.replace_header("Subject", f"[TEST - {stype}] {msg['Subject']}")
         send_smtp(msg)
         print(f"test email sent to {to}: {stype}")
@@ -248,7 +257,7 @@ def main():
                                     env("SENDER_NAME", "Zuma Housing"),
                                     env("GOOGLE_REVIEW_URL", GOOGLE_DEFAULT),
                                     env("COMPANY_NAME", "Zuma Housing"),
-                                    env("YELP_REVIEW_URL") or None, r.get("survey_type")))
+                                    (env("YELP_REVIEW_URL") or YELP_DEFAULT), r.get("survey_type")))
             db.finish(r["response_key"], status="sent", sent_at=datetime.now(timezone.utc).isoformat())
             sent += 1
             print(f"sent: {label}")

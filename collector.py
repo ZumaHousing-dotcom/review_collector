@@ -90,17 +90,26 @@ class Supabase:
                        json=fields, timeout=TIMEOUT, headers=self.h)
 
 
-def build_message(to, name, sender, sender_name, review_url, company, yelp_url=None):
+# One warm, specific line per survey type. {co} is the company name.
+INTROS = {
+    "maintenance": "It was our pleasure serving you, and we're so glad our maintenance team could help.",
+    "move-in": "Welcome to the {co} family! We're delighted your move-in went so well and hope you love your new home.",
+    "move-out": "Thank you for being part of the {co} family. We're sorry to see you go and wish you all the best in what's next.",
+    "showing": "Thank you for visiting. It was a pleasure showing you around.",
+}
+DEFAULT_INTRO = "Thank you for the great feedback about your experience with {co}. It means a lot to our team."
+
+
+def build_message(to, name, sender, sender_name, review_url, company, yelp_url=None, survey_type=None):
+    intro = INTROS.get((survey_type or "").lower(), DEFAULT_INTRO).format(co=company)
     first = (name or "").strip().split(" ")[0].title() if name else ""
     hi = f"Hi {first}," if first else "Hi,"
-    text = (f"{hi}\n\nThank you for the great feedback about your experience with {company}. "
-            "It means a lot to our team.\n\n"
+    text = (f"{hi}\n\nThank you for your wonderful feedback! {intro}\n\n"
             f"If you have a minute, would you share it as a review? It helps future residents find us:\n"
             f"Google: {review_url}\n"
             + (f"Yelp: {yelp_url}\n" if yelp_url else "")
             + f"\nThank you again,\nThe {company} Team\n")
-    html = (f"<p>{hi}</p><p>Thank you for the great feedback about your experience with {company}. "
-            "It means a lot to our team.</p>"
+    html = (f"<p>{hi}</p><p>Thank you for your wonderful feedback! {intro}</p>"
             "<p>If you have a minute, would you share it as a review? "
             "It helps future residents find us:</p>"
             f'<p><a href="{review_url}">Leave a Google review</a>'
@@ -182,7 +191,7 @@ def main():
                                     env("SENDER_NAME", "Zuma Housing"),
                                     env("GOOGLE_REVIEW_URL", "https://search.google.com/local/writereview?placeid=ChIJcTynjYG8woARQfVrh25QzU4"),
                                     env("COMPANY_NAME", "Zuma Housing"),
-                                    env("YELP_REVIEW_URL") or None))
+                                    env("YELP_REVIEW_URL") or None, r.get("survey_type")))
             db.finish(r["response_key"], status="sent", sent_at=datetime.now(timezone.utc).isoformat())
             sent += 1
             print(f"sent: {label}")

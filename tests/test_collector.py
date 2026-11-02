@@ -37,3 +37,13 @@ def test_yelp_link_optional():
     assert "https://yelp/r" in m.get_body(("html",)).get_content()
     m = c.build_message("a@b.com", "ana", "me@zuma.com", "Zuma", "https://g/r", "Zuma Housing")
     assert "yelp" not in m.get_body(("plain",)).get_content().lower()
+
+
+def test_message_matches_survey_type():
+    body = lambda t: c.build_message("a@b.com", "ana", "m@z.com", "Zuma", "https://g", "Zuma Housing",
+                                     survey_type=t).get_body(("plain",)).get_content()
+    assert "our pleasure serving you" in body("maintenance")
+    assert "Welcome to the Zuma Housing family" in body("move-in")
+    assert "sorry to see you go" in body("move-out")
+    assert "showing you around" in body("showing")
+    assert "means a lot to our team" in body("something-else")

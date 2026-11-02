@@ -20,6 +20,7 @@ import requests
 
 TIMEOUT = 30
 MIN_STARS = 4
+GOOGLE_DEFAULT = "https://search.google.com/local/writereview?placeid=ChIJcTynjYG8woARQfVrh25QzU4"
 # Which question holds the star rating for each AppFolio survey type (case-insensitive substring).
 RATING_QUESTIONS = {
     "maintenance": "overall experience",
@@ -155,12 +156,28 @@ def select_candidates(rows, since, already_responses, recent_emails):
     return picked
 
 
+def send_test(to):
+    """Send one sample of each email variant to `to`. Touches no resident, no database, no log."""
+    sender = env("SMTP_USER", required=True)
+    for stype in INTROS:
+        msg = build_message(to, "Sarah Example", sender, env("SENDER_NAME", "Zuma Housing"),
+                            env("GOOGLE_REVIEW_URL", GOOGLE_DEFAULT), env("COMPANY_NAME", "Zuma Housing"),
+                            env("YELP_REVIEW_URL") or None, stype)
+        msg.replace_header("Subject", f"[TEST - {stype}] {msg['Subject']}")
+        send_smtp(msg)
+        print(f"test email sent to {to}: {stype}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--send", action="store_true", help="actually send emails (same as SEND_EMAILS=true)")
     ap.add_argument("--lookback-days", type=int, default=int(env("LOOKBACK_DAYS", "3")))
     ap.add_argument("--limit", type=int, default=int(env("MAX_EMAILS_PER_RUN", "50")))
+    ap.add_argument("--test-to", metavar="ADDRESS",
+                    help="send one sample email per survey type to ADDRESS and exit (no database used)")
     args = ap.parse_args()
+    if args.test_to:
+        return send_test(args.test_to)
     send = args.send or env("SEND_EMAILS", "false").lower() == "true"
 
     db = Supabase(env("SUPABASE_URL", required=True), env("SUPABASE_SERVICE_KEY", required=True))
@@ -193,7 +210,7 @@ def main():
             sender = env("SMTP_USER", required=True)
             send_smtp(build_message(r["email"], r.get("resident_name"), sender,
                                     env("SENDER_NAME", "Zuma Housing"),
-                                    env("GOOGLE_REVIEW_URL", "https://search.google.com/local/writereview?placeid=ChIJcTynjYG8woARQfVrh25QzU4"),
+                                    env("GOOGLE_REVIEW_URL", GOOGLE_DEFAULT),
                                     env("COMPANY_NAME", "Zuma Housing"),
                                     env("YELP_REVIEW_URL") or None, r.get("survey_type")))
             db.finish(r["response_key"], status="sent", sent_at=datetime.now(timezone.utc).isoformat())

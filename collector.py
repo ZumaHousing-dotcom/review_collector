@@ -159,6 +159,7 @@ def select_candidates(rows, since, already_responses, recent_emails):
 def send_test(to):
     """Send one sample of each email variant to `to`. Touches no resident, no database, no log."""
     sender = env("SMTP_USER", required=True)
+    print("Yelp link:", "set" if env("YELP_REVIEW_URL") else "NOT SET (YELP_REVIEW_URL is empty, so the Yelp button is left out)")
     for stype in INTROS:
         msg = build_message(to, "Sarah Example", sender, env("SENDER_NAME", "Zuma Housing"),
                             env("GOOGLE_REVIEW_URL", GOOGLE_DEFAULT), env("COMPANY_NAME", "Zuma Housing"),

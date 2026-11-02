@@ -100,6 +100,11 @@ INTROS = {
 DEFAULT_INTRO = "Thank you for the great feedback about your experience with {co}. It means a lot to our team."
 
 
+def _button(url, label, color):
+    return (f'<p style="margin:12px 0"><a href="{url}" style="background:{color};color:#fff;padding:12px 22px;'
+            f'border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">{label}</a></p>')
+
+
 def build_message(to, name, sender, sender_name, review_url, company, yelp_url=None, survey_type=None):
     intro = INTROS.get((survey_type or "").lower(), DEFAULT_INTRO).format(co=company)
     first = (name or "").strip().split(" ")[0].title() if name else ""
@@ -112,10 +117,9 @@ def build_message(to, name, sender, sender_name, review_url, company, yelp_url=N
     html = (f"<p>{hi}</p><p>Thank you for your wonderful feedback! {intro}</p>"
             "<p>If you have a minute, would you share it as a review? "
             "It helps future residents find us:</p>"
-            f'<p><a href="{review_url}">Leave a Google review</a>'
-            + (f'<br><a href="{yelp_url}">Leave a Yelp review</a>' if yelp_url else "")
-            + "</p>"
-            f"<p>Thank you again,<br>The {company} Team</p>")
+            + _button(review_url, "Leave a Google review", "#4285F4")
+            + (_button(yelp_url, "Leave a Yelp review", "#D32323") if yelp_url else "")
+            + f"<p>Thank you again,<br>The {company} Team</p>")
     msg = EmailMessage()
     msg["Subject"] = f"Thank you from {company}"
     msg["From"] = f"{sender_name} <{sender}>"

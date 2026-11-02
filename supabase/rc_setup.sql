@@ -1,10 +1,6 @@
 -- Run once in the Supabase SQL Editor. It creates a log table and one private view.
 -- It does not change or delete any existing table.
 --
--- BEFORE RUNNING: edit the three <<...>> placeholders in the view below to match your contacts table
--- (the one that has each resident's name and email). To see what you have:
---   select column_name, table_schema, table_name from information_schema.columns
---   where column_name ilike '%email%';
 
 create table if not exists public.rc_email_log (
   response_key text primary key,          -- one email per survey response, ever
@@ -28,10 +24,10 @@ select
   s.property,
   s.date_received,
   s.tenant as resident_name,
-  (select min(c.<<email_column>>)
-     from <<contacts_table>> c
-    where lower(btrim(c.<<name_column>>)) = lower(btrim(s.tenant))
-   having count(distinct lower(c.<<email_column>>)) = 1) as resident_email,
+  (select min(c.email)
+     from appfolio.tenants c
+    where lower(btrim(c.name)) = lower(btrim(s.tenant))
+   having count(distinct lower(c.email)) = 1) as resident_email,
   s.questions
 from appfolio.survey_responses s;
 

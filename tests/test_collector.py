@@ -29,3 +29,11 @@ def test_email_message():
     m = c.build_message("a@b.com", "ana lopez", "me@zuma.com", "Zuma", "https://x.y/review", "Zuma Housing")
     assert m["To"] == "a@b.com" and "Hi Ana," in m.get_body(("plain",)).get_content()
     assert "https://x.y/review" in m.get_body(("html",)).get_content()
+
+
+def test_yelp_link_optional():
+    m = c.build_message("a@b.com", "ana", "me@zuma.com", "Zuma", "https://g/r", "Zuma Housing", "https://yelp/r")
+    assert "https://yelp/r" in m.get_body(("plain",)).get_content()
+    assert "https://yelp/r" in m.get_body(("html",)).get_content()
+    m = c.build_message("a@b.com", "ana", "me@zuma.com", "Zuma", "https://g/r", "Zuma Housing")
+    assert "yelp" not in m.get_body(("plain",)).get_content().lower()

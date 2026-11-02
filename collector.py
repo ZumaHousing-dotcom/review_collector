@@ -90,18 +90,22 @@ class Supabase:
                        json=fields, timeout=TIMEOUT, headers=self.h)
 
 
-def build_message(to, name, sender, sender_name, review_url, company):
+def build_message(to, name, sender, sender_name, review_url, company, yelp_url=None):
     first = (name or "").strip().split(" ")[0].title() if name else ""
     hi = f"Hi {first}," if first else "Hi,"
     text = (f"{hi}\n\nThank you for the great feedback about your experience with {company}. "
             "It means a lot to our team.\n\n"
-            f"If you have a minute, would you share it as a Google review? It helps future residents find us:\n"
-            f"{review_url}\n\nThank you again,\nThe {company} Team\n")
+            f"If you have a minute, would you share it as a review? It helps future residents find us:\n"
+            f"Google: {review_url}\n"
+            + (f"Yelp: {yelp_url}\n" if yelp_url else "")
+            + f"\nThank you again,\nThe {company} Team\n")
     html = (f"<p>{hi}</p><p>Thank you for the great feedback about your experience with {company}. "
             "It means a lot to our team.</p>"
-            "<p>If you have a minute, would you share it as a Google review? "
+            "<p>If you have a minute, would you share it as a review? "
             "It helps future residents find us:</p>"
-            f'<p><a href="{review_url}">Leave a Google review</a></p>'
+            f'<p><a href="{review_url}">Leave a Google review</a>'
+            + (f'<br><a href="{yelp_url}">Leave a Yelp review</a>' if yelp_url else "")
+            + "</p>"
             f"<p>Thank you again,<br>The {company} Team</p>")
     msg = EmailMessage()
     msg["Subject"] = f"Thank you from {company}"
@@ -177,7 +181,8 @@ def main():
             send_smtp(build_message(r["email"], r.get("resident_name"), sender,
                                     env("SENDER_NAME", "Zuma Housing"),
                                     env("GOOGLE_REVIEW_URL", "https://search.google.com/local/writereview?placeid=ChIJcTynjYG8woARQfVrh25QzU4"),
-                                    env("COMPANY_NAME", "Zuma Housing")))
+                                    env("COMPANY_NAME", "Zuma Housing"),
+                                    env("YELP_REVIEW_URL") or None))
             db.finish(r["response_key"], status="sent", sent_at=datetime.now(timezone.utc).isoformat())
             sent += 1
             print(f"sent: {label}")

@@ -1,7 +1,7 @@
 # Auto Google and Yelp Review Collector
 
 Every day this scans **new AppFolio survey responses** in Supabase, keeps the ones rated **4 or 5 stars**,
-and emails that resident a thank-you with a link to leave a Google review.
+and emails that resident a thank-you with links to leave a Google (and optionally Yelp) review. Set the repo variable `YELP_REVIEW_URL` to include Yelp.
 
 * AppFolio surveys only. Google and Yelp reviews are never read or emailed.
 * One email per survey response, ever, and at most one per address every 90 days (`rc_email_log`).

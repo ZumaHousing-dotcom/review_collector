@@ -22,5 +22,6 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          YELP_REVIEW_URL: ${{ vars.YELP_REVIEW_URL }}
           # scheduled runs use the repo variable SEND_EMAILS; manual runs use the input
           SEND_EMAILS: ${{ github.event_name == 'workflow_dispatch' && inputs.send || vars.SEND_EMAILS || 'false' }}

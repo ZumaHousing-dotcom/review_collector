@@ -5,7 +5,7 @@ and emails that resident a thank-you with links to leave a Google (and optionall
 
 * AppFolio surveys only. Google and Yelp reviews are never read or emailed.
 * One email per survey response, ever, and at most one per address every 90 days (`rc_email_log`).
-* Skips responses with no email, an unmatched/ambiguous name, or "test" in the name/email.
+* Looks back 7 days (a survey is never emailed twice), runs twice a day as a backup, and skips responses with no email, an unmatched/ambiguous name, or "test" in the name/email.
 * **Dry run by default.** Nothing is sent until `SEND_EMAILS=true`.
 
 Star rating used per survey: maintenance = overall experience, move-in = likelihood to recommend,

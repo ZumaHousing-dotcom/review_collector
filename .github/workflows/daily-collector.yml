@@ -2,6 +2,7 @@ name: Daily review email
 on:
   schedule:
     - cron: "17 16 * * *"        # every day, 16:17 UTC (about 9am Los Angeles)
+    - cron: "47 22 * * *"        # backup run, 22:47 UTC (about 2:45pm Los Angeles) in case GitHub skips the first
   workflow_dispatch:
     inputs:
       send:

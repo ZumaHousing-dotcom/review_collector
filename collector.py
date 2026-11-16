@@ -216,7 +216,7 @@ def send_test(to):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--send", action="store_true", help="actually send emails (same as SEND_EMAILS=true)")
-    ap.add_argument("--lookback-days", type=int, default=int(env("LOOKBACK_DAYS", "3")))
+    ap.add_argument("--lookback-days", type=int, default=int(env("LOOKBACK_DAYS", "7")))
     ap.add_argument("--limit", type=int, default=int(env("MAX_EMAILS_PER_RUN", "50")))
     ap.add_argument("--test-to", metavar="ADDRESS",
                     help="send one sample email per survey type to ADDRESS and exit (no database used)")
